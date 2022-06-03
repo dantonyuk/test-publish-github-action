@@ -25,11 +25,11 @@ jobs:
   publish:
     if: ${{ github.event.issue.pull_request || contains(['push', 'workflow_dispatch'], github.event_name) }}
     runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: write
-      issues: write
-      pull-requests: write
+    # permissions:
+    #   id-token: write
+    #   contents: write
+    #   issues: write
+    #   pull-requests: write
     steps:
     - uses: actions/checkout@v3
 
