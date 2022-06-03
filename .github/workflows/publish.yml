@@ -17,7 +17,7 @@ on:
 
 jobs:
   publish:
-    if: ${{ github.event.issue.pull_request || github.event.action == "push" }}
+    if: ${{ github.event.issue.pull_request || github.event.action == 'push' }}
     runs-on: ubuntu-latest
     permissions:
       id-token: write
