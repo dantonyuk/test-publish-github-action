@@ -48,7 +48,7 @@ jobs:
         fi
 
         [ -z "${version}" ] && source gradle.properties
-        [ -n "${IS_SNAPSHOT}"] && version=${version}-SNAPSHOT
+        [ -n "${IS_SNAPSHOT}" ] && version=${version}-SNAPSHOT
         echo "::set-output name=value::${version}"
         echo "VERSION: $version"
       env:
