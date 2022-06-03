@@ -21,9 +21,9 @@ jobs:
     steps:
       - name: Info
         run: |
-          echo ACTION: ${{ github.event.action }}
+          echo ACTION: ${{ github.event_name }}
   publish:
-    if: ${{ github.event.issue.pull_request || github.event.action == 'push' }}
+    if: ${{ github.event.issue.pull_request || github.event_name == 'push' }}
     runs-on: ubuntu-latest
     permissions:
       id-token: write
