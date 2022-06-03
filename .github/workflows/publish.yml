@@ -54,6 +54,11 @@ jobs:
       env:
         version: ${{ github.event.inputs.version }}
 
+    - name: Publish
+      id: publish
+      run: |
+        echo "Publishing..."
+
     - name: Tag Release
       if: steps.publish.outcome == 'success'
       run: |
