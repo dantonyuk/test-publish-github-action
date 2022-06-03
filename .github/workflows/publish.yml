@@ -16,6 +16,12 @@ on:
         default: ""
 
 jobs:
+  info:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Info
+        run: |
+          echo ACTION: ${{ github.event.action }}
   publish:
     if: ${{ github.event.issue.pull_request || github.event.action == 'push' }}
     runs-on: ubuntu-latest
