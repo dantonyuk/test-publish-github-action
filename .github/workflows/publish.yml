@@ -1,0 +1,68 @@
+name: Publish Test
+
+on:
+  push:
+    branches:
+      - master
+  issue_comment:
+    types:
+      - created
+
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version (leave empty to get it from the sources)
+        required: false
+        default: ""
+
+jobs:
+  publish:
+    if: ${{ github.event.issue.pull_request || github.event.action == "push" }}
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: write
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Determine Version
+      id: version
+      run: |
+        if [ "${{ github.event.action }}" == "issue_comment" ]
+        then
+          echo "${{ github.event.comment.body }}"
+          if [[ "${{ github.event.comment.body }}" =~ ^/(snapshot|release)[[:space:]]+([^[:space:]]*)$ ]
+          then
+            version=${BASH_REMATCH[2]}
+            if [ "${BASH_REMATCH[1]}" = "snapshot "]
+            then
+              IS_SNAPSHOT=yes
+            fi
+          fi
+        fi
+
+        [ -z "${version}" ] && source gradle.properties
+        [ -n "${IS_SNAPSHOT}"] && version=${version}-SNAPSHOT
+        echo "::set-output name=value::${version}"
+        echo "VERSION: $version"
+      env:
+        version: ${{ github.event.inputs.version }}
+
+    - name: Tag Release
+      if: steps.publish.outcome == 'success'
+      run: |
+        [ -z "${version}" ] && source gradle.properties
+        TAG=v-${{ steps.version.outputs.value }}
+        git tag ${TAG}
+        git push origin ${TAG}
+
+    - uses: actions/github-script@v3
+      with:
+        github-token: ${{secrets.GITHUB_TOKEN}}
+        script: |
+          github.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: '👋 Version ${{ steps.version.outputs.value }} has been successfully released'
+          })
