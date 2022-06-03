@@ -34,7 +34,7 @@ jobs:
     - name: Determine Version
       id: version
       run: |
-        if [ "${{ github.event.action }}" = "issue_comment" ]
+        if [ "${{ github.event_name }}" = "issue_comment" ]
         then
           echo "${{ github.event.comment.body }}"
           if [[ "${{ github.event.comment.body }}" =~ ^/(snapshot|release)[[:space:]]+([^[:space:]]*)$ ]]
@@ -63,8 +63,9 @@ jobs:
         git push origin ${TAG}
 
     - uses: actions/github-script@v3
+      if: ${{ github.event_name == 'issue_comment' }}
       with:
-        github-token: ${{secrets.GITHUB_TOKEN}}
+        github-token: ${{ secrets.GITHUB_TOKEN }}
         script: |
           github.issues.createComment({
             issue_number: context.issue.number,
