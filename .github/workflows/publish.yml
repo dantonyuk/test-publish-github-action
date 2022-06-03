@@ -69,7 +69,7 @@ jobs:
         git tag ${TAG}
         git push origin ${TAG}
 
-    - uses: actions/github-script@v3
+    - uses: actions/github-script@v6
       if: ${{ github.event_name == 'issue_comment' }}
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
