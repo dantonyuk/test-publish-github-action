@@ -34,10 +34,10 @@ jobs:
     - name: Determine Version
       id: version
       run: |
-        if [ "${{ github.event.action }}" == "issue_comment" ]
+        if [ "${{ github.event.action }}" = "issue_comment" ]
         then
           echo "${{ github.event.comment.body }}"
-          if [[ "${{ github.event.comment.body }}" =~ ^/(snapshot|release)[[:space:]]+([^[:space:]]*)$ ]
+          if [[ "${{ github.event.comment.body }}" =~ ^/(snapshot|release)[[:space:]]+([^[:space:]]*)$ ]]
           then
             version=${BASH_REMATCH[2]}
             if [ "${BASH_REMATCH[1]}" = "snapshot "]
