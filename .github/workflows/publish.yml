@@ -82,8 +82,8 @@ jobs:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         script: |
           github.issues.createComment({
-            issue_number: ${{ github.event.number }}
-            owner: context.repo.owner,
-            repo: context.repo.repo,
+            issue_number: ${{ github.event.issue.number }}
+            owner: ${{ github.event.actor }},
+            repo: ${{ github.repository }},
             body: '👋 Version ${{ steps.version.outputs.value }} has been successfully released'
           })
