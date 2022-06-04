@@ -96,9 +96,13 @@ jobs:
     - name: Completion notification
       if: github.event_name == 'issue_comment' && steps.publish.outcome == 'success'
       run: |
+        if [[ "${VERSION}" != *-SNAPSHOT ]]
+        then
+          TAG_TEXT=$'\n'"📌 Tag [v${VERSION}](${REPO_URL}/tree/v${VERSION})"
+        fi
+
         gh issue comment ${ISSUE_NUMBER} --body \
-        "⚡ Version ${VERSION} published successfully.
-        📌 Tag [v${VERSION}](${REPO_URL}/${VERSION})"
+          "⚡ Version ${VERSION} published successfully.${TAG_TEXT}"
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         ISSUE_NUMBER: ${{ github.event.issue.number }}
