@@ -56,7 +56,6 @@ jobs:
       run: |
         if [ "${{ github.event_name }}" = "issue_comment" ]
         then
-          echo "${{ github.event.comment.body }}"
           if [[ "${{ github.event.comment.body }}" =~ ^/(snapshot|release)([[:space:]]+([^[:space:]]*))?$ ]]
           then
             version=${BASH_REMATCH[3]}
@@ -92,7 +91,7 @@ jobs:
           git push origin ${TAG}
         fi
       env:
-        VERSION: ${{ github.event.inputs.version }}
+        VERSION: ${{ steps.version.outputs.value }}
 
     - name: Completion notification
       if: github.event_name == 'issue_comment' && steps.publish.outcome == 'success'
@@ -104,4 +103,4 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         ISSUE_NUMBER: ${{ github.event.issue.number }}
         REPO_URL: ${{ github.event.repository.html_url }}
-        VERSION: ${{ github.event.inputs.version }}
+        VERSION: ${{ steps.version.outputs.value }}
