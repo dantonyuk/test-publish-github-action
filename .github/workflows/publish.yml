@@ -83,7 +83,7 @@ jobs:
         script: |
           github.issues.createComment({
             issue_number: ${{ github.event.issue.number }}
-            owner: ${{ github.event.actor }},
+            owner: ${{ github.actor }},
             repo: ${{ github.repository }},
             body: '👋 Version ${{ steps.version.outputs.value }} has been successfully released'
           })
