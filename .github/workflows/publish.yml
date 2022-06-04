@@ -93,11 +93,14 @@ jobs:
     - uses: actions/github-script@v6
       if: github.event_name == 'issue_comment' && steps.publish.outcome == 'success'
       with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
         script: |
           github.rest.issues.createComment({
             issue_number: context.issue.number,
             owner: context.repo.owner,
             repo: context.repo.repo,
-            body: '🚀 Version ${{ steps.version.outputs.value }} published successfully.\n\nTag: ${{ github.}}'
+            body:
+              `⚡ Version ${ process.env.version } published successfully.\n\n` +
+              `📌 [Tag v${ process.env.version }](${{ github.event.repository.html_url }}/${ process.env.version })`
           })
+      env:
+        version: ${{ github.event.inputs.version }}
