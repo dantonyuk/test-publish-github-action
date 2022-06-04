@@ -95,6 +95,7 @@ jobs:
           VERSION: ${{ steps.version.outputs.value }}
 
       - name: 🔒 Tag Release
+        id: tag
         run: |
           if [[ "${VERSION}" != *-SNAPSHOT ]]
           then
@@ -107,13 +108,12 @@ jobs:
 
       - name: 📚 Publish
         id: publish
-        if: steps.version.outcome == 'success'
         run: |
           sleep 10
           echo "Publishing..."
 
       - name: 🔓 Untag Release if Failed
-        if: always() && steps.publish.outcome != 'success'
+        if: always() && steps.tag.outcome == 'success' && steps.publish.outcome != 'success'
         run: |
           if [[ "${VERSION}" != *-SNAPSHOT ]]
           then
@@ -150,13 +150,16 @@ jobs:
         if: always() && github.event_name == 'issue_comment' && steps.publish.outcome != 'success'
         with:
           script: |
+            const version = process.env.VERSION;
+            const runId = process.env.GITHUB_RUN_ID;
+
             github.rest.issues.updateComment({
                 comment_id: process.env.COMMENT_ID,
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 body:
-                  `🚫 Version ${VERSION} publishing failed.\n` +
-                  `🏃 [Action Run](${context.payload.repository.html_url}/actions/runs/${process.env.GITHUB_RUN_ID})`
+                  `🚫 Version ${version} publishing failed.\n` +
+                  `🏃 [Action Run](${context.payload.repository.html_url}/actions/runs/${runId})`
             })
         env:
           COMMENT_ID: ${{ steps.notify.outputs.comment-id }}
