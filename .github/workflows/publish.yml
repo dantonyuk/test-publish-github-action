@@ -109,7 +109,7 @@ jobs:
       id: publish
       if: steps.version.outcome == 'success'
       run: |
-        sleep 5
+        sleep 10
         echo "Publishing..."
 
     - name: Untag Release if Failed
