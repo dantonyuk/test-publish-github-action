@@ -42,8 +42,8 @@ jobs:
     #   issues: write
     #   pull-requests: write
     steps:
-      - name: 🌵 Identify PR Branch
-        id: branch
+      - name: 🌵 Identify PR Head
+        id: pr-head
         uses: actions/github-script@v6
         if: github.event.issue.pull_request
         with:
@@ -54,12 +54,13 @@ jobs:
                 repo: context.repo.repo
             });
 
-            core.setOutput("value", pr.head.ref);
+            core.setOutput("ref", pr.head.ref);
+            core.setOutput("sha", pr.head.sha);
 
       - name: 📩 Fetch Sources
         uses: actions/checkout@v2
         with:
-          ref: ${{ steps.branch.outputs.value }}
+          ref: ${{ steps.pr-head.outputs.reref }}
 
       - name: 🤹 Identify Artifact Version
         id: version
@@ -91,18 +92,34 @@ jobs:
         if: github.event_name == 'issue_comment'
         with:
           script: |
-              const { data: comment } = await github.rest.issues.createComment({
-                issue_number: context.issue.number,
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                body:
-                  `☕ Version ${process.env.VERSION} is getting published...\n` +
-                  `🏃 [Action Run](${context.payload.repository.html_url}/actions/runs/${process.env.GITHUB_RUN_ID})`
-              });
+            const { data: comment } = await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body:
+                `☕ Version ${process.env.VERSION} is getting published...\n` +
+                `🏃 [Action Run](${context.payload.repository.html_url}/actions/runs/${process.env.GITHUB_RUN_ID})`
+            });
 
-              core.setOutput("comment-id", comment.id);
+            core.setOutput("comment-id", comment.id);
+
+            const { data: check } = await github.rest.checks.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: "Publish",
+              head_sha: process.env.HEAD_SHA,
+              status: 'in_progress', 
+              output: {
+                title: 'Publish an Artifact',
+                summary: 'This is summary\nSecond line',
+                text: 'This is\na multiline text.\n**Test** some _markdown elements_.'
+              }
+            });
+
+            core.setOutput("check-id", check.id);
         env:
           VERSION: ${{ steps.version.outputs.value }}
+          HEAD_SHA: ${{ steps.pr-head.outputs.sha }}
 
       - name: 🔒 Tag Release
         id: tag
@@ -149,10 +166,19 @@ jobs:
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 body: body
-            })
+            });
+
+            github.rest.checks.create({
+              check_run_id: process.env.CHECK_ID,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              status: 'completed', 
+              conclusion: 'success'
+            });
         env:
           ISSUE_NUMBER: ${{ github.event.issue.number }}
           COMMENT_ID: ${{ steps.notify.outputs.comment-id }}
+          CHECK_ID: ${{ steps.notify.outputs.check-id }}
           VERSION: ${{ steps.version.outputs.value }}
 
       - name: 👎 Failed Completion Notification (PR)
@@ -170,7 +196,16 @@ jobs:
                 body:
                   `🚫 Version ${version} publishing failed.\n` +
                   `🏃 [Action Run](${context.payload.repository.html_url}/actions/runs/${runId})`
-            })
+            });
+
+            github.rest.checks.create({
+              check_run_id: process.env.CHECK_ID,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              status: 'completed', 
+              conclusion: '${{ steps.publish.outcome }}'
+            });
         env:
           COMMENT_ID: ${{ steps.notify.outputs.comment-id }}
+          CHECK_ID: ${{ steps.notify.outputs.check-id }}
           VERSION: ${{ steps.version.outputs.value }}
