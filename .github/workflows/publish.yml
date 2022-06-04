@@ -26,6 +26,8 @@ jobs:
           echo "$GITHUB_CONTEXT"
           which gh
           which hub
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
   publish:
     if: |
       (github.event.issue.pull_request && (
@@ -97,5 +99,5 @@ jobs:
             issue_number: context.issue.number,
             owner: context.repo.owner,
             repo: context.repo.repo,
-            body: '🚀 Version ${{ steps.version.outputs.value }} published successfully.'
+            body: '🚀 Version ${{ steps.version.outputs.value }} published successfully.\n\nTag: ${{ github.}}'
           })
