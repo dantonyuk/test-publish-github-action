@@ -42,6 +42,8 @@ jobs:
       run: |
         env
         echo "$GITHUB_CONTEXT"
+        which gh
+        which hub
 
     - uses: actions/checkout@v2
       # run: |
@@ -94,5 +96,5 @@ jobs:
             issue_number: context.issue.number,
             owner: context.repo.owner,
             repo: context.repo.repo,
-            body: '👋 Version ${{ steps.version.outputs.value }} has been successfully released'
+            body: '🚀 Version ${{ steps.version.outputs.value }} published successfully.'
           })
