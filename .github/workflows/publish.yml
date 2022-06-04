@@ -42,108 +42,123 @@ jobs:
     #   issues: write
     #   pull-requests: write
     steps:
-    - uses: actions/checkout@v2
+      - name: 📩 Fetch Sources
+        uses: actions/checkout@v2
 
-    - name: Checkout proper branch
-      if: github.event.issue.pull_request
-      run: |
-        gh pr checkout ${{ github.event.issue.number }}
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: 🌵 Checkout Proper Branch
+        if: github.event.issue.pull_request
+        run: |
+          gh pr checkout ${{ github.event.issue.number }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Determine Version
-      id: version
-      run: |
-        if [ "${{ github.event_name }}" = "issue_comment" ]
-        then
-          if [[ "${{ github.event.comment.body }}" =~ ^/(snapshot|release)([[:space:]]+([^[:space:]]*))?$ ]]
+      - name: 🤹 Determine Artifact Version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "issue_comment" ]
           then
-            version=${BASH_REMATCH[3]}
-            if [ "${BASH_REMATCH[1]}" = "snapshot" ]
+            if [[ "${{ github.event.comment.body }}" =~ ^/(snapshot|release)([[:space:]]+([^[:space:]]*))?$ ]]
             then
-              IS_SNAPSHOT=yes
+              version=${BASH_REMATCH[3]}
+              if [ "${BASH_REMATCH[1]}" = "snapshot" ]
+              then
+                IS_SNAPSHOT=yes
+              fi
+            else
+              exit 100
             fi
-          else
-            exit 100
           fi
-        fi
 
-        [ -z "${version}" ] && source gradle.properties
-        [ -n "${IS_SNAPSHOT}" ] && version=${version}-SNAPSHOT
-        echo "::set-output name=value::${version}"
-        echo "VERSION: $version"
-      env:
-        version: ${{ github.event.inputs.version }}
+          [ -z "${version}" ] && source gradle.properties
+          [ -n "${IS_SNAPSHOT}" ] && version=${version}-SNAPSHOT
+          echo "::set-output name=value::${version}"
+          echo "VERSION: $version"
+        env:
+          version: ${{ github.event.inputs.version }}
 
-    - name: Process notification
-      id: notify
-      uses: actions/github-script@v6
-      if: github.event_name == 'issue_comment'
-      with:
-        script: |
-            const { data: comment } = await github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body:
-                `🏃 Version ${process.env.VERSION} is being publishing...\n` +
-                `[Action Run](${context.payload.repository.html_url}/actions/runs/${process.env.GITHUB_RUN_ID})`
+      - name: 📢 Start Notification (PR)
+        id: notify
+        uses: actions/github-script@v6
+        if: github.event_name == 'issue_comment'
+        with:
+          script: |
+              const { data: comment } = await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body:
+                  `☕ Version ${process.env.VERSION} is getting published...\n` +
+                  `🏃 [Action Run](${context.payload.repository.html_url}/actions/runs/${process.env.GITHUB_RUN_ID})`
+              })
+              core.setOutput("comment-id", comment.id);
+        env:
+          VERSION: ${{ steps.version.outputs.value }}
+
+      - name: 🔒 Tag Release
+        if: steps.publish.outcome == 'success'
+        run: |
+          if [[ "${VERSION}" != *-SNAPSHOT ]]
+          then
+            TAG=v${VERSION}
+            git tag ${TAG}
+            git push origin ${TAG}
+          fi
+        env:
+          VERSION: ${{ steps.version.outputs.value }}
+
+      - name: 📚 Publish
+        id: publish
+        if: steps.version.outcome == 'success'
+        run: |
+          sleep 10
+          echo "Publishing..."
+
+      - name: 🔓 Untag Release if Failed
+        if: always() && steps.publish.outcome != 'success'
+        run: |
+          if [[ "${VERSION}" != *-SNAPSHOT ]]
+          then
+            TAG=v${VERSION}
+            git tag --delete ${TAG}
+            git push --delete origin ${TAG}
+          fi
+        env:
+          VERSION: ${{ steps.version.outputs.value }}
+
+      - name: 👍 Successful Completion Notification (PR)
+        uses: actions/github-script@v6
+        if: always() && github.event_name == 'issue_comment' && steps.publish.outcome == 'success'
+        with:
+          script: |
+            const version = process.env.VERSION;
+            const tagText = version.endsWith("-SNAPSHOT") ? '' :
+              `\n🏷️ [v${version}](${context.payload.repository.html_url}/tree/v${version})`;
+            const body = `🎉 Version ${version} published successfully.${tagText}`;
+
+            github.rest.issues.updateComment({
+                comment_id: process.env.COMMENT_ID,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: body
             })
-            core.setOutput("comment-id", comment.id);
-      env:
-        VERSION: ${{ steps.version.outputs.value }}
+        env:
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          COMMENT_ID: ${{ steps.notify.outputs.comment-id }}
+          VERSION: ${{ steps.version.outputs.value }}
 
-    - name: Publish
-      id: publish
-      if: steps.version.outcome == 'success'
-      run: |
-        sleep 5
-        echo "Publishing..."
-
-    - name: Tag Release
-      if: steps.publish.outcome == 'success'
-      run: |
-        if [[ "${VERSION}" != *-SNAPSHOT ]]
-        then
-          TAG=v${VERSION}
-          git tag ${TAG}
-          git push origin ${TAG}
-        fi
-      env:
-        VERSION: ${{ steps.version.outputs.value }}
-
-    - name: Successful completion notification
-      uses: actions/github-script@v6
-      if: github.event_name == 'issue_comment' && steps.publish.outcome == 'success'
-      with:
-        script: |
-          const version = process.env.VERSION;
-          const tagText = version.endsWith("-SNAPSHOT") ? '' :
-            `\n📌 Tag [v${version}](${context.payload.repository.html_url}/tree/v${version})`;
-          const body = `⚡ Version ${VERSION} published successfully.${tagText}`;
-
-          github.rest.issues.updateComment({
-              comment_id: process.env.COMMENT_ID,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: body
-          })
-      env:
-        ISSUE_NUMBER: ${{ github.event.issue.number }}
-        COMMENT_ID: ${{ steps.notify.outputs.comment-id }}
-        VERSION: ${{ steps.version.outputs.value }}
-
-    - name: Failed completion notification
-      uses: actions/github-script@v6
-      if: github.event_name == 'issue_comment' && steps.publish.outcome != 'success'
-      with:
-        script: |
-          github.rest.issues.updateComment({
-              comment_id: process.env.COMMENT_ID,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: `⚡ Version ${VERSION} publishing failed.`
-          })
-      env:
-        COMMENT_ID: ${{ steps.notify.outputs.comment-id }}
-        VERSION: ${{ steps.version.outputs.value }}
+      - name: 👎 Failed Completion Notification (PR)
+        uses: actions/github-script@v6
+        if: always() && github.event_name == 'issue_comment' && steps.publish.outcome != 'success'
+        with:
+          script: |
+            github.rest.issues.updateComment({
+                comment_id: process.env.COMMENT_ID,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body:
+                  `🚫 Version ${VERSION} publishing failed.\n` +
+                  `🏃 [Action Run](${context.payload.repository.html_url}/actions/runs/${process.env.GITHUB_RUN_ID})`
+            })
+        env:
+          COMMENT_ID: ${{ steps.notify.outputs.comment-id }}
+          VERSION: ${{ steps.version.outputs.value }}
