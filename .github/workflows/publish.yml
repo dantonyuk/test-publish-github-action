@@ -75,10 +75,29 @@ jobs:
       env:
         version: ${{ github.event.inputs.version }}
 
+    - name: Process notification
+      id: notify
+      uses: actions/github-script@v6
+      if: github.event_name == 'issue_comment'
+      with:
+        script: |
+            const { data: comment } = await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body:
+                `🏃 Version ${process.env.VERSION} is being publishing...\n` +
+                `[Action Run](${context.payload.repository.html_url}/actions/runs/${process.env.GITHUB_RUN_ID})`
+            })
+            core.setOutput("comment-id", comment.id);
+      env:
+        VERSION: ${{ steps.version.outputs.value }}
+
     - name: Publish
       id: publish
       if: steps.version.outcome == 'success'
       run: |
+        sleep 5
         echo "Publishing..."
 
     - name: Tag Release
@@ -93,18 +112,38 @@ jobs:
       env:
         VERSION: ${{ steps.version.outputs.value }}
 
-    - name: Completion notification
+    - name: Successful completion notification
+      uses: actions/github-script@v6
       if: github.event_name == 'issue_comment' && steps.publish.outcome == 'success'
-      run: |
-        if [[ "${VERSION}" != *-SNAPSHOT ]]
-        then
-          TAG_TEXT=$'\n'"📌 Tag [v${VERSION}](${REPO_URL}/tree/v${VERSION})"
-        fi
+      with:
+        script: |
+          const version = process.env.VERSION;
+          const tagText = version.endsWith("-SNAPSHOT") ? '' :
+            `\n📌 Tag [v${version}](${context.payload.repository.html_url}/tree/v${version})`;
+          const body = `⚡ Version ${VERSION} published successfully.${tagText}`;
 
-        gh issue comment ${ISSUE_NUMBER} --body \
-          "⚡ Version ${VERSION} published successfully.${TAG_TEXT}"
+          github.rest.issues.updateComment({
+              comment_id: process.env.COMMENT_ID,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+          })
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         ISSUE_NUMBER: ${{ github.event.issue.number }}
-        REPO_URL: ${{ github.event.repository.html_url }}
+        COMMENT_ID: ${{ steps.notify.outputs.comment-id }}
+        VERSION: ${{ steps.version.outputs.value }}
+
+    - name: Failed completion notification
+      uses: actions/github-script@v6
+      if: github.event_name == 'issue_comment' && steps.publish.outcome != 'success'
+      with:
+        script: |
+          github.rest.issues.updateComment({
+              comment_id: process.env.COMMENT_ID,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `⚡ Version ${VERSION} publishing failed.`
+          })
+      env:
+        COMMENT_ID: ${{ steps.notify.outputs.comment-id }}
         VERSION: ${{ steps.version.outputs.value }}
