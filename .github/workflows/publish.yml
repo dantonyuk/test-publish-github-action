@@ -64,7 +64,7 @@ jobs:
     - name: Tag Release
       if: steps.publish.outcome == 'success'
       run: |
-        TAG=v-${{ steps.version.outputs.value }}
+        TAG=v${{ steps.version.outputs.value }}
         git tag ${TAG}
         git push origin ${TAG}
 
