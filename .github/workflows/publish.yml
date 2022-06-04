@@ -168,7 +168,7 @@ jobs:
                 body: body
             });
 
-            github.rest.checks.create({
+            github.rest.checks.update({
               check_run_id: process.env.CHECK_ID,
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -198,7 +198,7 @@ jobs:
                   `🏃 [Action Run](${context.payload.repository.html_url}/actions/runs/${runId})`
             });
 
-            github.rest.checks.create({
+            github.rest.checks.update({
               check_run_id: process.env.CHECK_ID,
               owner: context.repo.owner,
               repo: context.repo.repo,
