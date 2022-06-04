@@ -41,8 +41,11 @@ jobs:
     #   pull-requests: write
     steps:
     - uses: actions/checkout@v2
-      # run: |
-      #   [ -n "${{ github.event.issue.id }}" ] && git checkout 
+
+    - name: Checkout proper branch
+      if: github.event.issue.pull_request
+      run: |
+        gh pr checkout ${{ github.event.issue.number }}
 
     - name: Determine Version
       id: version
