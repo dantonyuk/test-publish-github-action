@@ -26,7 +26,7 @@ jobs:
     if: |
       (github.event.issue.pull_request && (
         startsWith(github.event.comment.body, '/snapshot') ||
-        startsWith(github.event.comment.body, '/release')))
+        startsWith(github.event.comment.body, '/release'))) ||
       github.event_name == 'push' ||
       github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
