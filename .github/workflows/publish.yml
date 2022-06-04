@@ -23,11 +23,13 @@ jobs:
         run: |
           echo ACTION: ${{ github.event_name }}
   publish:
-    if: ${{ github.event.issue.pull_request || github.event_name == 'push' }}
+    if: ${{ github.event.issue.pull_request || github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: write
+    # permissions:
+    #   id-token: write
+    #   contents: write
+    #   issues: write
+    #   pull-requests: write
     steps:
     - uses: actions/checkout@v3
 
@@ -40,7 +42,7 @@ jobs:
           if [[ "${{ github.event.comment.body }}" =~ ^/(snapshot|release)[[:space:]]+([^[:space:]]*)$ ]]
           then
             version=${BASH_REMATCH[2]}
-            if [ "${BASH_REMATCH[1]}" = "snapshot "]
+            if [ "${BASH_REMATCH[1]}" = "snapshot" ]
             then
               IS_SNAPSHOT=yes
             fi
@@ -67,13 +69,13 @@ jobs:
         git tag ${TAG}
         git push origin ${TAG}
 
-    - uses: actions/github-script@v3
+    - uses: actions/github-script@v6
       if: ${{ github.event_name == 'issue_comment' }}
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         script: |
           github.issues.createComment({
-            issue_number: context.issue.number,
+            issue_number: ${{ github.event.number }}
             owner: context.repo.owner,
             repo: context.repo.repo,
             body: '👋 Version ${{ steps.version.outputs.value }} has been successfully released'
