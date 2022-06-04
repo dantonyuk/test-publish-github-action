@@ -81,9 +81,12 @@ jobs:
     - name: Tag Release
       if: steps.publish.outcome == 'success'
       run: |
-        TAG=v${{ steps.version.outputs.value }}
-        git tag ${TAG}
-        git push origin ${TAG}
+        if [[ "${version}" != *-SNAPSHOT ]]
+        then
+          TAG=v${{ steps.version.outputs.value }}
+          git tag ${TAG}
+          git push origin ${TAG}
+        fi
 
     - uses: actions/github-script@v6
       if: github.event_name == 'issue_comment' && steps.publish.outcome == 'success'
