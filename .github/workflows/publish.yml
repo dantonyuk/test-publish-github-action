@@ -120,7 +120,7 @@ jobs:
           const version = process.env.VERSION;
           const tagText = version.endsWith("-SNAPSHOT") ? '' :
             `\n📌 Tag [v${version}](${context.payload.repository.html_url}/tree/v${version})`;
-          const body = `⚡ Version ${VERSION} published successfully.${tagText}`;
+          const body = `⚡ Version ${version} published successfully.${tagText}`;
 
           github.rest.issues.updateComment({
               comment_id: process.env.COMMENT_ID,
