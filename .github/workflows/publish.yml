@@ -95,7 +95,6 @@ jobs:
           VERSION: ${{ steps.version.outputs.value }}
 
       - name: 🔒 Tag Release
-        if: steps.publish.outcome == 'success'
         run: |
           if [[ "${VERSION}" != *-SNAPSHOT ]]
           then
