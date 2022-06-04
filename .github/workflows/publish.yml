@@ -47,8 +47,9 @@ jobs:
     - name: Checkout proper branch
       if: github.event.issue.pull_request
       run: |
-        echo ${GITHUB_TOKEN} | gh auth login --with-token
         gh pr checkout ${{ github.event.issue.number }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Determine Version
       id: version
@@ -84,24 +85,23 @@ jobs:
     - name: Tag Release
       if: steps.publish.outcome == 'success'
       run: |
-        if [[ "${version}" != *-SNAPSHOT ]]
+        if [[ "${VERSION}" != *-SNAPSHOT ]]
         then
-          TAG=v${{ steps.version.outputs.value }}
+          TAG=v${VERSION}
           git tag ${TAG}
           git push origin ${TAG}
         fi
-
-    - uses: actions/github-script@v6
-      if: github.event_name == 'issue_comment' && steps.publish.outcome == 'success'
-      with:
-        script: |
-          github.rest.issues.createComment({
-            issue_number: context.issue.number,
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            body:
-              `⚡ Version ${ process.env.version } published successfully.\n\n` +
-              `📌 [Tag v${ process.env.version }](${{ github.event.repository.html_url }}/${ process.env.version })`
-          })
       env:
-        version: ${{ github.event.inputs.version }}
+        VERSION: ${{ github.event.inputs.version }}
+
+    - name: Completion notification
+      if: github.event_name == 'issue_comment' && steps.publish.outcome == 'success'
+      run: |
+        gh issue comment ${ISSUE_NUMBER} --body \
+        "⚡ Version ${VERSION} published successfully.
+        📌 Tag [v${VERSION}](${REPO_URL}/${VERSION})"
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        ISSUE_NUMBER: ${{ github.event.issue.number }}
+        REPO_URL: ${{ github.event.repository.html_url }}
+        VERSION: ${{ github.event.inputs.version }}
