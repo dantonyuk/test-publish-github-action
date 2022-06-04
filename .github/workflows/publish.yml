@@ -22,6 +22,10 @@ jobs:
       - name: Info
         run: |
           echo ACTION: ${{ github.event_name }}
+          env
+          echo "$GITHUB_CONTEXT"
+          which gh
+          which hub
   publish:
     if: |
       (github.event.issue.pull_request && (
@@ -36,18 +40,12 @@ jobs:
     #   issues: write
     #   pull-requests: write
     steps:
-    - name: Dump GitHub context
-      env:
-        GITHUB_CONTEXT: ${{ toJson(github) }}
-      run: |
-        env
-        echo "$GITHUB_CONTEXT"
-        which gh
-        which hub
-
     - uses: actions/checkout@v2
-      # run: |
-      #   [ -n "${{ github.event.issue.id }}" ] && git checkout 
+
+    - name: Checkout proper branch
+      if: github.event.issue.pull_request
+      run: |
+        gh pr checkout ${{ github.event.issue.number }}
 
     - name: Determine Version
       id: version
