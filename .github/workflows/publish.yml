@@ -42,17 +42,26 @@ jobs:
     #   issues: write
     #   pull-requests: write
     steps:
+      - name: 🌵 Identify PR Branch
+        id: branch
+        uses: actions/github-script@v6
+        if: github.event.issue.pull_request
+        with:
+          script: |
+            const { data: pr } = await github.rest.pulls.get({
+                pull_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo
+            });
+
+            core.setOutput("value", pr.head.ref);
+
       - name: 📩 Fetch Sources
         uses: actions/checkout@v2
+        with:
+          ref: ${{ steps.branch.outputs.value }}
 
-      - name: 🌵 Checkout Proper Branch
-        if: github.event.issue.pull_request
-        run: |
-          gh pr checkout ${{ github.event.issue.number }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: 🤹 Determine Artifact Version
+      - name: 🤹 Identify Artifact Version
         id: version
         run: |
           if [ "${{ github.event_name }}" = "issue_comment" ]
@@ -89,7 +98,8 @@ jobs:
                 body:
                   `☕ Version ${process.env.VERSION} is getting published...\n` +
                   `🏃 [Action Run](${context.payload.repository.html_url}/actions/runs/${process.env.GITHUB_RUN_ID})`
-              })
+              });
+
               core.setOutput("comment-id", comment.id);
         env:
           VERSION: ${{ steps.version.outputs.value }}
