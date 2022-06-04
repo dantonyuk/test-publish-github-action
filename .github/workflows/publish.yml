@@ -93,13 +93,6 @@ jobs:
       env:
         VERSION: ${{ steps.version.outputs.value }}
 
-    - name: Publish
-      id: publish
-      if: steps.version.outcome == 'success'
-      run: |
-        sleep 5
-        echo "Publishing..."
-
     - name: Tag Release
       if: steps.publish.outcome == 'success'
       run: |
@@ -108,6 +101,25 @@ jobs:
           TAG=v${VERSION}
           git tag ${TAG}
           git push origin ${TAG}
+        fi
+      env:
+        VERSION: ${{ steps.version.outputs.value }}
+
+    - name: Publish
+      id: publish
+      if: steps.version.outcome == 'success'
+      run: |
+        sleep 5
+        echo "Publishing..."
+
+    - name: Untag Release if Failed
+      if: always() && steps.publish.outcome != 'success'
+      run: |
+        if [[ "${VERSION}" != *-SNAPSHOT ]]
+        then
+          TAG=v${VERSION}
+          git tag --delete ${TAG}
+          git push --delete origin ${TAG}
         fi
       env:
         VERSION: ${{ steps.version.outputs.value }}
