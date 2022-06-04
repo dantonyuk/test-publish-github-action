@@ -98,7 +98,7 @@ jobs:
       run: |
         if [[ "${VERSION}" != *-SNAPSHOT ]]
         then
-          TAG_TEXT=$'\n'"📌 Tag [v${VERSION}](${REPO_URL}/${VERSION})"
+          TAG_TEXT=$'\n'"📌 Tag [v${VERSION}](${REPO_URL}/tree/v${VERSION})"
         fi
 
         gh issue comment ${ISSUE_NUMBER} --body \
