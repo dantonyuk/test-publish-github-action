@@ -76,7 +76,7 @@ jobs:
         env:
           version: ${{ github.event.inputs.version }}
 
-      - name: 📢 Start Notification
+      - name: 📢 Start Notification (PR)
         id: notify
         uses: actions/github-script@v6
         if: github.event_name == 'issue_comment'
@@ -125,7 +125,7 @@ jobs:
         env:
           VERSION: ${{ steps.version.outputs.value }}
 
-      - name: 👍 Successful Completion Notification
+      - name: 👍 Successful Completion Notification (PR)
         uses: actions/github-script@v6
         if: always() && github.event_name == 'issue_comment' && steps.publish.outcome == 'success'
         with:
@@ -146,7 +146,7 @@ jobs:
           COMMENT_ID: ${{ steps.notify.outputs.comment-id }}
           VERSION: ${{ steps.version.outputs.value }}
 
-      - name: 👎 Failed Completion Notification
+      - name: 👎 Failed Completion Notification (PR)
         uses: actions/github-script@v6
         if: always() && github.event_name == 'issue_comment' && steps.publish.outcome != 'success'
         with:
