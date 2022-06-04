@@ -114,7 +114,7 @@ jobs:
 
     - name: Successful completion notification
       uses: actions/github-script@v6
-      if: github.event_name == 'issue_comment' && steps.publish.outcome == 'success'
+      if: always() && github.event_name == 'issue_comment' && steps.publish.outcome == 'success'
       with:
         script: |
           const version = process.env.VERSION;
@@ -135,7 +135,7 @@ jobs:
 
     - name: Failed completion notification
       uses: actions/github-script@v6
-      if: github.event_name == 'issue_comment' && steps.publish.outcome != 'success'
+      if: always() && github.event_name == 'issue_comment' && steps.publish.outcome != 'success'
       with:
         script: |
           github.rest.issues.updateComment({
