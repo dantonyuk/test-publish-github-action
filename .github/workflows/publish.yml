@@ -109,6 +109,7 @@ jobs:
               name: "Publish",
               head_sha: process.env.HEAD_SHA,
               status: 'in_progress', 
+              external_id: process.env.GITHUB_RUN_ID,
               output: {
                 title: 'Publish an Artifact',
                 summary: 'This is summary\nSecond line',
