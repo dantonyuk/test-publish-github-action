@@ -67,20 +67,13 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" = "issue_comment" ]
           then
-            if [[ "${{ github.event.comment.body }}" =~ ^/(snapshot|release)([[:space:]]+([^[:space:]]*))?$ ]]
-            then
-              version=${BASH_REMATCH[3]}
-              if [ "${BASH_REMATCH[1]}" = "snapshot" ]
-              then
-                IS_SNAPSHOT=yes
-              fi
-            else
-              exit 100
-            fi
+            [[ "${{ github.event.comment.body }}" =~ ^/(snapshot|release)([[:space:]]+([^[:space:]]*))?$ ]] || exit 100
+            command=${BASH_REMATCH[1]}
+            version=${BASH_REMATCH[3]}
           fi
 
           [ -z "${version}" ] && source gradle.properties
-          [ -n "${IS_SNAPSHOT}" ] && version=${version}-SNAPSHOT
+          [ "${command}" = "snapshot" ] && version=${version}-SNAPSHOT
           echo "::set-output name=value::${version}"
           echo "VERSION: $version"
         env:
