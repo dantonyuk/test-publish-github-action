@@ -60,7 +60,7 @@ jobs:
       - name: 📩 Fetch Sources
         uses: actions/checkout@v2
         with:
-          ref: ${{ steps.pr-head.outputs.reref }}
+          ref: ${{ steps.pr-head.outputs.ref }}
 
       - name: 🤹 Identify Artifact Version
         id: version
