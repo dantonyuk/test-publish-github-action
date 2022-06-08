@@ -85,13 +85,17 @@ jobs:
         if: github.event_name == 'issue_comment'
         with:
           script: |
+            const version = process.env.VERSION;
+            const sha = process.env.HEAD_SHA;
+            const runId = process.env.GITHUB_RUN_ID;
+
             const { data: comment } = await github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
               body:
-                `☕ Version ${process.env.VERSION} is getting published...\n` +
-                `🏃 [Action Run](${context.payload.repository.html_url}/actions/runs/${process.env.GITHUB_RUN_ID})`
+                `☕ Version ${version} (${sha}) is getting published...\n` +
+                `🏃 [Action Run](${context.payload.repository.html_url}/actions/runs/${runId})`
             });
 
             core.setOutput("comment-id", comment.id);
@@ -151,9 +155,10 @@ jobs:
         with:
           script: |
             const version = process.env.VERSION;
+            const sha = process.env.HEAD_SHA;
             const tagText = version.endsWith("-SNAPSHOT") ? '' :
               `\n🏷️ [v${version}](${context.payload.repository.html_url}/tree/v${version})`;
-            const body = `🎉 Version ${version} published successfully.${tagText}`;
+            const body = `🎉 Version ${version} (${sha}) published successfully.${tagText}`;
 
             github.rest.issues.updateComment({
                 comment_id: process.env.COMMENT_ID,
@@ -174,6 +179,7 @@ jobs:
           COMMENT_ID: ${{ steps.notify.outputs.comment-id }}
           CHECK_ID: ${{ steps.notify.outputs.check-id }}
           VERSION: ${{ steps.version.outputs.value }}
+          HEAD_SHA: ${{ steps.pr-head.outputs.sha }}
 
       - name: 👎 Failed Completion Notification (PR)
         uses: actions/github-script@v6
@@ -181,6 +187,7 @@ jobs:
         with:
           script: |
             const version = process.env.VERSION;
+            const sha = process.env.HEAD_SHA;
             const runId = process.env.GITHUB_RUN_ID;
 
             github.rest.issues.updateComment({
@@ -188,7 +195,7 @@ jobs:
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 body:
-                  `🚫 Version ${version} publishing failed.\n` +
+                  `🚫 Version ${version} (${sha}) publishing failed.\n` +
                   `🏃 [Action Run](${context.payload.repository.html_url}/actions/runs/${runId})`
             });
 
@@ -203,3 +210,4 @@ jobs:
           COMMENT_ID: ${{ steps.notify.outputs.comment-id }}
           CHECK_ID: ${{ steps.notify.outputs.check-id }}
           VERSION: ${{ steps.version.outputs.value }}
+          HEAD_SHA: ${{ steps.pr-head.outputs.sha }}
