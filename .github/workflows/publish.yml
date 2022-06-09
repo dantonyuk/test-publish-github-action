@@ -88,6 +88,7 @@ jobs:
             const version = process.env.VERSION;
             const sha = process.env.HEAD_SHA;
             const runId = process.env.GITHUB_RUN_ID;
+            const runUrl = `${context.payload.repository.html_url}/actions/runs/${runId}`;
 
             const { data: comment } = await github.rest.issues.createComment({
               issue_number: context.issue.number,
@@ -95,7 +96,7 @@ jobs:
               repo: context.repo.repo,
               body:
                 `☕ Version ${version} (${sha}) is getting published...\n` +
-                `🏃 [Action Run](${context.payload.repository.html_url}/actions/runs/${runId})`
+                `🏃 [Action Run](${runUrl})`
             });
 
             core.setOutput("comment-id", comment.id);
@@ -106,7 +107,7 @@ jobs:
               name: "Publish",
               head_sha: process.env.HEAD_SHA,
               status: 'in_progress', 
-              external_id: process.env.GITHUB_RUN_ID,
+              details_url: runUrl,
               output: {
                 title: 'Publish an Artifact',
                 summary: 'This is summary\nSecond line',
