@@ -118,7 +118,6 @@ jobs:
         with:
           github-token: ${{ steps.get_token.outputs.app_token }}
           script: |
-            const version = process.env.VERSION;
             const sha = process.env.HEAD_SHA;
             const runId = process.env.GITHUB_RUN_ID;
             const runUrl = `${context.payload.repository.html_url}/actions/runs/${runId}`;
@@ -134,7 +133,6 @@ jobs:
 
             core.setOutput("check-id", check.id);
         env:
-          VERSION: ${{ steps.version.outputs.value }}
           HEAD_SHA: ${{ steps.pr-head.outputs.sha }}
 
       - name: 🔒 Tag Release
