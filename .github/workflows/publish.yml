@@ -107,12 +107,7 @@ jobs:
               name: "Publish",
               head_sha: process.env.HEAD_SHA,
               status: 'in_progress', 
-              details_url: runUrl,
-              output: {
-                title: 'Publish an Artifact',
-                summary: 'This is summary\nSecond line',
-                text: 'This is\na multiline text.\n**Test** some _markdown elements_.'
-              }
+              details_url: runUrl
             });
 
             core.setOutput("check-id", check.id);
