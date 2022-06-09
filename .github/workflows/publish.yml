@@ -79,7 +79,7 @@ jobs:
         env:
           version: ${{ github.event.inputs.version }}
 
-      - name: Get token
+      - name: 🔑 Get token
         id: get_token
         uses: machine-learning-apps/actions-app-token@master
         with:
@@ -184,18 +184,9 @@ jobs:
                 repo: context.repo.repo,
                 body: body
             });
-
-            github.rest.checks.update({
-              check_run_id: process.env.CHECK_ID,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              status: 'completed', 
-              conclusion: 'success'
-            });
         env:
           ISSUE_NUMBER: ${{ github.event.issue.number }}
           COMMENT_ID: ${{ steps.notify.outputs.comment-id }}
-          CHECK_ID: ${{ steps.check.outputs.check-id }}
           VERSION: ${{ steps.version.outputs.value }}
           HEAD_SHA: ${{ steps.pr-head.outputs.sha }}
 
@@ -216,7 +207,33 @@ jobs:
                   `🚫 Version ${version} (${sha}) publishing failed.\n` +
                   `🏃 [Action Run](${context.payload.repository.html_url}/actions/runs/${runId})`
             });
+        env:
+          COMMENT_ID: ${{ steps.notify.outputs.comment-id }}
+          VERSION: ${{ steps.version.outputs.value }}
+          HEAD_SHA: ${{ steps.pr-head.outputs.sha }}
 
+      - name: 👍 Successful Completion Check (PR)
+        uses: actions/github-script@v6
+        if: always() && github.event_name == 'issue_comment' && steps.publish.outcome == 'success'
+        with:
+          github-token: ${{ steps.get_token.outputs.app_token }}
+          script: |
+            github.rest.checks.update({
+              check_run_id: process.env.CHECK_ID,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              status: 'completed', 
+              conclusion: 'success'
+            });
+        env:
+          CHECK_ID: ${{ steps.check.outputs.check-id }}
+
+      - name: 👎 Failed Completion Check (PR)
+        uses: actions/github-script@v6
+        if: always() && github.event_name == 'issue_comment' && steps.publish.outcome != 'success'
+        with:
+          github-token: ${{ steps.get_token.outputs.app_token }}
+          script: |
             github.rest.checks.update({
               check_run_id: process.env.CHECK_ID,
               owner: context.repo.owner,
@@ -225,7 +242,4 @@ jobs:
               conclusion: '${{ steps.publish.outcome }}'
             });
         env:
-          COMMENT_ID: ${{ steps.notify.outputs.comment-id }}
           CHECK_ID: ${{ steps.check.outputs.check-id }}
-          VERSION: ${{ steps.version.outputs.value }}
-          HEAD_SHA: ${{ steps.pr-head.outputs.sha }}
