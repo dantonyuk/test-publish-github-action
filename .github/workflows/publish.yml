@@ -79,6 +79,13 @@ jobs:
         env:
           version: ${{ github.event.inputs.version }}
 
+      - name: Get token
+        id: get_token
+        uses: machine-learning-apps/actions-app-token@master
+        with:
+          APP_PEM: ${{ secrets.APP_PEM }}
+          APP_ID: ${{ secrets.APP_ID }}
+
       - name: 📢 Start Notification (PR)
         id: notify
         uses: actions/github-script@v6
@@ -109,7 +116,7 @@ jobs:
         uses: actions/github-script@v6
         if: github.event_name == 'issue_comment'
         with:
-          github-token: ${{ secrets.GH_TOKEN }}
+          github-token: ${{ steps.get_token.outputs.app_token }}
           script: |
             const version = process.env.VERSION;
             const sha = process.env.HEAD_SHA;
