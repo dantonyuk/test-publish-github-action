@@ -84,7 +84,6 @@ jobs:
         uses: actions/github-script@v6
         if: github.event_name == 'issue_comment'
         with:
-          github-token: ${{ secrets.GH_TOKEN }}
           script: |
             const version = process.env.VERSION;
             const sha = process.env.HEAD_SHA;
@@ -101,6 +100,21 @@ jobs:
             });
 
             core.setOutput("comment-id", comment.id);
+        env:
+          VERSION: ${{ steps.version.outputs.value }}
+          HEAD_SHA: ${{ steps.pr-head.outputs.sha }}
+
+      - name: ✅ Create a Check (PR)
+        id: check
+        uses: actions/github-script@v6
+        if: github.event_name == 'issue_comment'
+        with:
+          github-token: ${{ secrets.GH_TOKEN }}
+          script: |
+            const version = process.env.VERSION;
+            const sha = process.env.HEAD_SHA;
+            const runId = process.env.GITHUB_RUN_ID;
+            const runUrl = `${context.payload.repository.html_url}/actions/runs/${runId}`;
 
             const { data: check } = await github.rest.checks.create({
               owner: context.repo.owner,
@@ -174,7 +188,7 @@ jobs:
         env:
           ISSUE_NUMBER: ${{ github.event.issue.number }}
           COMMENT_ID: ${{ steps.notify.outputs.comment-id }}
-          CHECK_ID: ${{ steps.notify.outputs.check-id }}
+          CHECK_ID: ${{ steps.check.outputs.check-id }}
           VERSION: ${{ steps.version.outputs.value }}
           HEAD_SHA: ${{ steps.pr-head.outputs.sha }}
 
@@ -205,6 +219,6 @@ jobs:
             });
         env:
           COMMENT_ID: ${{ steps.notify.outputs.comment-id }}
-          CHECK_ID: ${{ steps.notify.outputs.check-id }}
+          CHECK_ID: ${{ steps.check.outputs.check-id }}
           VERSION: ${{ steps.version.outputs.value }}
           HEAD_SHA: ${{ steps.pr-head.outputs.sha }}
