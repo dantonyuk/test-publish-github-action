@@ -79,13 +79,6 @@ jobs:
         env:
           version: ${{ github.event.inputs.version }}
 
-      - name: 🔑 Get token
-        id: get_token
-        uses: machine-learning-apps/actions-app-token@master
-        with:
-          APP_PEM: ${{ secrets.APP_PEM }}
-          APP_ID: ${{ secrets.APP_ID }}
-
       - name: 📢 Start Notification (PR)
         id: notify
         uses: actions/github-script@v6
@@ -116,7 +109,6 @@ jobs:
         uses: actions/github-script@v6
         if: github.event_name == 'issue_comment'
         with:
-          github-token: ${{ steps.get_token.outputs.app_token }}
           script: |
             const sha = process.env.HEAD_SHA;
             const runId = process.env.GITHUB_RUN_ID;
@@ -214,7 +206,6 @@ jobs:
         uses: actions/github-script@v6
         if: always() && github.event_name == 'issue_comment' && steps.publish.outcome == 'success'
         with:
-          github-token: ${{ steps.get_token.outputs.app_token }}
           script: |
             github.rest.checks.update({
               check_run_id: process.env.CHECK_ID,
@@ -230,7 +221,6 @@ jobs:
         uses: actions/github-script@v6
         if: always() && github.event_name == 'issue_comment' && steps.publish.outcome != 'success'
         with:
-          github-token: ${{ steps.get_token.outputs.app_token }}
           script: |
             github.rest.checks.update({
               check_run_id: process.env.CHECK_ID,
