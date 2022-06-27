@@ -117,8 +117,7 @@ jobs:
               status: 'in_progress', 
               output: {
                 title: 'Publishing to CodeArtifact',
-                summary: `More details: 🏃 ${runUrl}`,
-                text: 'Some text, test [URL](https://google.com/)<br>After BR\nAfter N https://google.com/'
+                summary: `More details: 🏃 ${runUrl}`
               }
             });
 
